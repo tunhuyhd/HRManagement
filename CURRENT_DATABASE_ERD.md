@@ -16,6 +16,7 @@ Database hien co cac nhom bang sau:
 | Xac thuc | `asp_net_users`, `asp_net_roles`, `asp_net_user_roles` |
 | Identity mo rong | `asp_net_user_claims`, `asp_net_role_claims`, `asp_net_user_logins`, `asp_net_user_tokens` |
 | Quan ly phien | `refresh_tokens` |
+| Khoi phuc mat khau | `password_reset_requests` |
 | Audit | `audit_logs` |
 | EF Core | `__ef_migrations_history` |
 
@@ -82,6 +83,7 @@ Quan he:
 
 - `asp_net_users 1 --- 0..1 employees`.
 - `asp_net_users 1 --- N refresh_tokens`.
+- `asp_net_users 1 --- N password_reset_requests`.
 - `asp_net_users N --- N asp_net_roles` thong qua `asp_net_user_roles`.
 - `asp_net_users 1 --- N asp_net_user_claims`.
 - `asp_net_users 1 --- N asp_net_user_logins`.
@@ -199,7 +201,33 @@ RefreshToken B (revoked) -> replaced by RefreshToken C
 RefreshToken C (active)
 ```
 
-## 12. Bang audit_logs
+## 12. Bang password_reset_requests
+
+Luu yeu cau cap lai mat khau do user gui va trang thai xu ly cua ADMIN. Bang khong luu mat khau cu, mat khau moi hoac password-reset token.
+
+| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+|---|---|---:|---|---|
+| `id` | uuid | No | PK | ID yeu cau |
+| `user_id` | uuid | No | FK | User yeu cau cap lai mat khau |
+| `status` | varchar(20) | No | Filtered UNIQUE part | Pending hoac Completed |
+| `completed_at_utc` | timestamptz | Yes | | Thoi gian ADMIN hoan tat |
+| `completed_by` | uuid | Yes | Logical reference | ID ADMIN xu ly |
+| `created_at_utc` | timestamptz | No | | Thoi gian gui yeu cau |
+| `last_modified_by` | uuid | Yes | Logical reference | ID user cap nhat |
+| `last_modified_at_utc` | timestamptz | Yes | | Thoi gian cap nhat |
+| `is_deleted` | boolean | No | | Soft delete |
+| `deleted_by` | uuid | Yes | Logical reference | ID user xoa |
+| `deleted_at_utc` | timestamptz | Yes | | Thoi gian xoa |
+
+Quan he va rang buoc:
+
+- `password_reset_requests.user_id -> asp_net_users.id`.
+- `asp_net_users 1 --- N password_reset_requests`.
+- `ON DELETE RESTRICT` de bao toan lich su yeu cau.
+- Filtered unique index chi cho phep mot yeu cau `Pending` cho moi user.
+- `completed_by` la logical reference, khong phai foreign key vat ly.
+
+## 13. Bang audit_logs
 
 Luu lich su thay doi cua cac entity ke thua `BaseEntity`.
 
@@ -218,7 +246,7 @@ Luu lich su thay doi cua cac entity ke thua `BaseEntity`.
 
 `audit_logs` khong co foreign key vat ly den `asp_net_users` hoac bang nghiep vu. Day la chu y thiet ke de audit log van ton tai khi user hoac ban ghi goc da bi xoa. Khi tao ERD, co the ve duong net dut "logical reference" neu cong cu ho tro, nhung khong duoc danh dau la foreign key.
 
-## 13. Bang __ef_migrations_history
+## 14. Bang __ef_migrations_history
 
 Bang ky thuat do EF Core quan ly, dung de ghi nhan migration da ap dung.
 
@@ -229,13 +257,14 @@ Bang ky thuat do EF Core quan ly, dung de ghi nhan migration da ap dung.
 
 Bang nay khong co quan he voi cac bang nghiep vu va co the bo khoi ERD nghiep vu.
 
-## 14. Tong hop foreign key
+## 15. Tong hop foreign key
 
 | Bang con | Cot FK | Bang cha | Cot PK | Cardinality | Delete behavior |
 |---|---|---|---|---|---|
 | `employees` | `user_id` | `asp_net_users` | `id` | User `1` - Employee `0..1` | SET NULL |
 | `refresh_tokens` | `user_id` | `asp_net_users` | `id` | User `1` - RefreshToken `N` | CASCADE |
 | `refresh_tokens` | `replaced_by_token_id` | `refresh_tokens` | `id` | Self reference | RESTRICT |
+| `password_reset_requests` | `user_id` | `asp_net_users` | `id` | User `1` - ResetRequest `N` | RESTRICT |
 | `asp_net_user_roles` | `user_id` | `asp_net_users` | `id` | User `1` - UserRole `N` | CASCADE |
 | `asp_net_user_roles` | `role_id` | `asp_net_roles` | `id` | Role `1` - UserRole `N` | CASCADE |
 | `asp_net_user_claims` | `user_id` | `asp_net_users` | `id` | User `1` - UserClaim `N` | CASCADE |
@@ -243,11 +272,12 @@ Bang nay khong co quan he voi cac bang nghiep vu va co the bo khoi ERD nghiep vu
 | `asp_net_user_logins` | `user_id` | `asp_net_users` | `id` | User `1` - UserLogin `N` | CASCADE |
 | `asp_net_user_tokens` | `user_id` | `asp_net_users` | `id` | User `1` - UserToken `N` | CASCADE |
 
-## 15. Quan he ngan gon cho cong cu tao ERD
+## 16. Quan he ngan gon cho cong cu tao ERD
 
 ```text
 asp_net_users 1 --- 0..1 employees
 asp_net_users 1 --- N refresh_tokens
+asp_net_users 1 --- N password_reset_requests
 refresh_tokens 0..1 --- 0..N refresh_tokens : replaced_by_token_id
 
 asp_net_users N --- N asp_net_roles through asp_net_user_roles
@@ -260,7 +290,7 @@ audit_logs --- no physical foreign keys
 __ef_migrations_history --- no relationships
 ```
 
-## 16. Mermaid ERD tham khao
+## 17. Mermaid ERD tham khao
 
 Khoi Mermaid nay the hien cac bang va quan he chinh. Co the dua nguyen noi dung tai lieu cho ChatGPT de bo sung day du cot vao diagram.
 
@@ -268,6 +298,7 @@ Khoi Mermaid nay the hien cac bang va quan he chinh. Co the dua nguyen noi dung 
 erDiagram
     ASP_NET_USERS ||--o| EMPLOYEES : "has profile"
     ASP_NET_USERS ||--o{ REFRESH_TOKENS : "owns sessions"
+    ASP_NET_USERS ||--o{ PASSWORD_RESET_REQUESTS : "requests reset"
     REFRESH_TOKENS o|--o{ REFRESH_TOKENS : "replaced by"
 
     ASP_NET_USERS ||--o{ ASP_NET_USER_ROLES : "assigned"
@@ -306,6 +337,15 @@ erDiagram
         datetime expires_at_utc
         datetime revoked_at_utc
         uuid replaced_by_token_id FK
+    }
+
+    PASSWORD_RESET_REQUESTS {
+        uuid id PK
+        uuid user_id FK
+        string status
+        datetime created_at_utc
+        datetime completed_at_utc
+        uuid completed_by
     }
 
     ASP_NET_ROLES {
@@ -359,7 +399,7 @@ erDiagram
     }
 ```
 
-## 17. Prompt de xuat de tao diagram
+## 18. Prompt de xuat de tao diagram
 
 ```text
 Dua tren tai lieu CURRENT_DATABASE_ERD.md, hay tao ERD cho PostgreSQL bang Mermaid erDiagram.

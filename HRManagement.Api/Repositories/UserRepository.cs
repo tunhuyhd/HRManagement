@@ -47,6 +47,18 @@ public sealed class UserRepository(UserManager<AppUser> userManager) : IUserRepo
 
     public Task<IdentityResult> UpdateAsync(AppUser user) => userManager.UpdateAsync(user);
 
+    public Task<IdentityResult> ChangePasswordAsync(
+        AppUser user,
+        string currentPassword,
+        string newPassword) =>
+        userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+    public async Task<IdentityResult> ResetPasswordAsync(AppUser user, string newPassword)
+    {
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        return await userManager.ResetPasswordAsync(user, token, newPassword);
+    }
+
     public Task<IList<string>> GetRolesAsync(AppUser user) => userManager.GetRolesAsync(user);
 
     public Task<bool> CheckPasswordAsync(AppUser user, string password) =>

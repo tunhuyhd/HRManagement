@@ -14,6 +14,7 @@ public sealed class ApplicationDbContext(
 	public DbSet<Employee> Employees => Set<Employee>();
 	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 	public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+	public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{

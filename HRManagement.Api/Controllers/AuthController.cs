@@ -2,12 +2,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using HRManagement.Api.Features.Auth.Models;
 using HRManagement.Api.Features.Auth.Services;
+using HRManagement.Api.Features.PasswordResets.Models;
+using HRManagement.Api.Features.PasswordResets.Services;
 
 namespace HRManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(
+    IAuthService authService,
+    IPasswordResetService passwordResetService) : ControllerBase
 {
     [AllowAnonymous]
     [HttpPost("login")]
@@ -19,6 +23,38 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         return response is null
             ? Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Email or password is incorrect.")
             : Ok(response);
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        var result = await passwordResetService.ChangePasswordAsync(request);
+        if (result.Succeeded)
+        {
+            return NoContent();
+        }
+
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(nameof(request.NewPassword), error);
+        }
+
+        return ValidationProblem(ModelState);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    {
+        await passwordResetService.RequestResetAsync(request);
+        return Accepted(new
+        {
+            message = "If the account exists and is active, the request has been recorded."
+        });
     }
 
     [AllowAnonymous]

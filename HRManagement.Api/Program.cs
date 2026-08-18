@@ -6,6 +6,7 @@ using HRManagement.Api.Features.Auth.Services;
 using HRManagement.Api.Features.AuditLogs.Services;
 using HRManagement.Api.Features.Employees.Services;
 using HRManagement.Api.Features.Users.Services;
+using HRManagement.Api.Features.PasswordResets.Services;
 using HRManagement.Api.Repositories;
 using HRManagement.Api.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -108,6 +109,17 @@ builder.Services
                     return;
                 }
 
+                var tokenSecurityStamp = context.Principal!
+                    .FindFirstValue("security_stamp");
+                if (!string.Equals(
+                    user.SecurityStamp ?? string.Empty,
+                    tokenSecurityStamp,
+                    StringComparison.Ordinal))
+                {
+                    context.Fail("The user's security credentials have changed.");
+                    return;
+                }
+
                 var currentRoles = await userManager.GetRolesAsync(user);
                 var tokenRoles = context.Principal!
                     .FindAll(ClaimTypes.Role)
@@ -129,6 +141,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IPasswordResetRequestRepository, PasswordResetRequestRepository>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
