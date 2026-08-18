@@ -7,6 +7,10 @@ public interface IUserRepository
 {
     Task<AppUser?> FindByEmailAsync(string email);
     Task<AppUser?> FindByIdAsync(Guid id);
+    Task<(IReadOnlyList<AppUser> Items, int TotalCount)> GetListAsync(
+        int pageNumber,
+        int pageSize,
+        string? search);
     Task<IdentityResult> CreateAsync(AppUser user, string password);
     Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
     Task<IdentityResult> RemoveFromRolesAsync(AppUser user, IEnumerable<string> roles);

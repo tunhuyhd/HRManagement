@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using HRManagement.Api.Entities;
 using HRManagement.Api.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRManagement.Api.Repositories;
 
@@ -9,6 +10,31 @@ public sealed class UserRepository(UserManager<AppUser> userManager) : IUserRepo
     public Task<AppUser?> FindByEmailAsync(string email) => userManager.FindByEmailAsync(email);
 
     public Task<AppUser?> FindByIdAsync(Guid id) => userManager.FindByIdAsync(id.ToString());
+
+    public async Task<(IReadOnlyList<AppUser> Items, int TotalCount)> GetListAsync(
+        int pageNumber,
+        int pageSize,
+        string? search)
+    {
+        var query = userManager.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var keyword = search.Trim();
+            query = query.Where(user =>
+                user.Email != null && EF.Functions.ILike(user.Email, $"%{keyword}%"));
+        }
+
+        var totalCount = await query.CountAsync();
+        var users = await query
+            .OrderBy(user => user.Email)
+            .ThenBy(user => user.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (users, totalCount);
+    }
 
     public Task<IdentityResult> CreateAsync(AppUser user, string password) =>
         userManager.CreateAsync(user, password);

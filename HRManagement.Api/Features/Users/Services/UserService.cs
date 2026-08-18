@@ -2,6 +2,7 @@ using HRManagement.Api.Constants;
 using HRManagement.Api.Entities;
 using HRManagement.Api.Features.Users.Models;
 using HRManagement.Api.Repositories.Interfaces;
+using HRManagement.Api.Common.Pagination;
 
 namespace HRManagement.Api.Features.Users.Services;
 
@@ -47,6 +48,33 @@ public sealed class UserService(
             new CreateUserResponse(user.Id, user.Email!, AppRoles.User),
             false,
             Array.Empty<string>());
+    }
+
+    public async Task<PagedResponse<UserManagementResponse>> GetListAsync(UserListQuery query)
+    {
+        var (users, totalCount) = await userRepository.GetListAsync(
+            query.PageNumber,
+            query.PageSize,
+            query.Search);
+
+        var items = new List<UserManagementResponse>(users.Count);
+        foreach (var user in users)
+        {
+            items.Add(await ToResponseAsync(user));
+        }
+
+        return new PagedResponse<UserManagementResponse>(
+            items,
+            query.PageNumber,
+            query.PageSize,
+            totalCount,
+            (int)Math.Ceiling(totalCount / (double)query.PageSize));
+    }
+
+    public async Task<UserManagementResponse?> GetByIdAsync(Guid id)
+    {
+        var user = await userRepository.FindByIdAsync(id);
+        return user is null ? null : await ToResponseAsync(user);
     }
 
     public async Task<UpdateUserAccessResult> UpdateAccessAsync(
@@ -124,4 +152,15 @@ public sealed class UserService(
             null,
             UpdateUserAccessError.IdentityError,
             result.Errors.Select(error => error.Description).ToArray());
+
+    private async Task<UserManagementResponse> ToResponseAsync(AppUser user)
+    {
+        var roles = await userRepository.GetRolesAsync(user);
+        return new UserManagementResponse(
+            user.Id,
+            user.Email!,
+            roles.ToArray(),
+            user.IsActive,
+            user.CreatedAtUtc);
+    }
 }

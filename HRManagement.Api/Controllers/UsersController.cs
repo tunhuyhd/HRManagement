@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using HRManagement.Api.Constants;
 using HRManagement.Api.Features.Users.Models;
 using HRManagement.Api.Features.Users.Services;
+using HRManagement.Api.Common.Pagination;
 
 namespace HRManagement.Api.Controllers;
 
@@ -11,6 +12,25 @@ namespace HRManagement.Api.Controllers;
 [Route("api/users")]
 public sealed class UsersController(IUserService userService) : ControllerBase
 {
+    [HttpGet]
+    [ProducesResponseType<PagedResponse<UserManagementResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<UserManagementResponse>>> GetList(
+        [FromQuery] UserListQuery query)
+    {
+        return Ok(await userService.GetListAsync(query));
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType<UserManagementResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserManagementResponse>> GetById(Guid id)
+    {
+        var user = await userService.GetByIdAsync(id);
+        return user is null
+            ? NotFound(new { message = $"User with ID '{id}' was not found." })
+            : Ok(user);
+    }
+
     [HttpPost]
     [ProducesResponseType<CreateUserResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

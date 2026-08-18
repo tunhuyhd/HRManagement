@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HRManagement.Api.Controllers;
 
 [ApiController]
-[Authorize(Roles = AppRoles.Admin)]
+[Authorize(Roles = AppRoles.HrManager)]
 [Route("api/audit-logs")]
 public sealed class AuditLogsController(
     IAuditLogService auditLogService) : ControllerBase
