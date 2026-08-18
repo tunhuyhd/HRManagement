@@ -1,4 +1,5 @@
 ﻿using HRManagement.Api.Entities;
+using HRManagement.Api.Features.Employees.Mappings;
 using HRManagement.Api.Features.Employees.Models;
 using HRManagement.Api.Repositories.Interfaces;
 
@@ -38,5 +39,21 @@ public sealed class EmployeeService(
 			employee.Status,
 			employee.UserId,
 			employee.CreatedAtUtc);
+	}
+
+	public async Task<IReadOnlyList<EmployeeResponse>> GetListAsync()
+	{
+		var employees = await employeeRepository.GetListAsync();
+
+		return employees
+			.Select(employee => employee.ToResponse())
+			.ToList();
+	}
+
+	public async Task<EmployeeResponse?> GetByIdAsync(Guid id)
+	{
+		var employee = await employeeRepository.GetByIdAsync(id);
+
+		return employee?.ToResponse();
 	}
 }

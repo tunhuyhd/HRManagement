@@ -28,4 +28,32 @@ public sealed class EmployeesController(
 
 		return StatusCode(StatusCodes.Status201Created, employee);
 	}
+
+	[HttpGet]
+	[ProducesResponseType<IReadOnlyList<EmployeeResponse>>(
+	StatusCodes.Status200OK)]
+	public async Task<ActionResult<IReadOnlyList<EmployeeResponse>>> GetList()
+	{
+		var employees = await employeeService.GetListAsync();
+
+		return Ok(employees);
+	}
+
+	[HttpGet("{id:guid}")]
+	[ProducesResponseType<EmployeeResponse>(StatusCodes.Status200OK)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<ActionResult<EmployeeResponse>> GetById(Guid id)
+	{
+		var employee = await employeeService.GetByIdAsync(id);
+
+		if (employee is null)
+		{
+			return NotFound(new
+			{
+				message = $"Employee with ID '{id}' was not found."
+			});
+		}
+
+		return Ok(employee);
+	}
 }
