@@ -1,0 +1,28 @@
+# .NET build and NuGet artifacts
+**/[Bb]in/
+**/[Oo]bj/
+artifacts/
+packages/
+*.nupkg
+*.snupkg
+
+# IDE and user-specific files
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test and coverage output
+TestResults/
+**/TestResults/
+coverage/
+coverage.*
+*.coverage
+*.coveragexml
+
+# Runtime logs
+*.log
+logs/

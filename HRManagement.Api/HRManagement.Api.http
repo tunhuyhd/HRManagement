@@ -1,0 +1,39 @@
+@host = http://localhost:5000
+@adminToken = paste-admin-access-token-here
+@userToken = paste-user-access-token-here
+
+### Login with seeded admin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@gmail.com",
+  "password": "admin123"
+}
+
+### Get current admin
+GET {{host}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### Create a USER account (ADMIN only)
+POST {{host}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "email": "user@gmail.com",
+  "password": "user123"
+}
+
+### Login with the newly created user
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@gmail.com",
+  "password": "user123"
+}
+
+### Get current user
+GET {{host}}/api/auth/me
+Authorization: Bearer {{userToken}}
