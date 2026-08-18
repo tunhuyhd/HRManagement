@@ -20,6 +20,10 @@ public sealed class EmployeeConfiguration
 		builder.HasIndex(employee => employee.EmployeeCode)
 			.IsUnique();
 
+		builder.HasIndex(employee => employee.UserId)
+			.IsUnique()
+			.HasFilter("user_id IS NOT NULL AND NOT is_deleted");
+
 		builder.Property(employee => employee.FirstName)
 			.HasMaxLength(100)
 			.IsRequired();

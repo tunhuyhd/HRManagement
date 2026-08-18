@@ -12,7 +12,9 @@ public static class AuditLogFactory
     [
         nameof(BaseEntity.CreatedAtUtc),
         nameof(BaseEntity.LastModifiedBy),
-        nameof(BaseEntity.LastModifiedAtUtc)
+        nameof(BaseEntity.LastModifiedAtUtc),
+        nameof(BaseEntity.DeletedBy),
+        nameof(BaseEntity.DeletedAtUtc)
     ];
 
     public static IReadOnlyList<AuditLog> Create(
@@ -50,7 +52,7 @@ public static class AuditLogFactory
             {
                 TableName = entry.Metadata.GetTableName() ?? entry.Metadata.ClrType.Name,
                 RecordId = GetRecordId(entry),
-                Action = entry.State.ToString(),
+                Action = IsSoftDelete(entry) ? "Deleted" : entry.State.ToString(),
                 ChangedColumns = JsonSerializer.Serialize(
                     changedProperties.Select(property => property.Metadata.GetColumnName())),
                 OldValues = oldValues is null ? null : JsonSerializer.Serialize(oldValues),
@@ -63,6 +65,11 @@ public static class AuditLogFactory
 
         return auditLogs;
     }
+
+    private static bool IsSoftDelete(EntityEntry<BaseEntity> entry) =>
+        entry.State == EntityState.Modified &&
+        entry.Property(nameof(BaseEntity.IsDeleted)).IsModified &&
+        entry.Entity.IsDeleted;
 
     private static string GetRecordId(EntityEntry<BaseEntity> entry)
     {

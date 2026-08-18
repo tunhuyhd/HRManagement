@@ -6,6 +6,7 @@ namespace HRManagement.Api.Repositories.Interfaces;
 public interface IUserRepository
 {
     Task<AppUser?> FindByEmailAsync(string email);
+    Task<AppUser?> FindByIdAsync(Guid id);
     Task<IdentityResult> CreateAsync(AppUser user, string password);
     Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
     Task<IList<string>> GetRolesAsync(AppUser user);

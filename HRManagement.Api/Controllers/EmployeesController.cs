@@ -17,17 +17,17 @@ public sealed class EmployeesController(
 	public async Task<ActionResult<EmployeeResponse>> Create(
 		CreateEmployeeRequest request)
 	{
-		var employee = await employeeService.CreateAsync(request);
+		var result = await employeeService.CreateAsync(request);
 
-		if (employee is null)
+		if (!result.IsSuccess)
 		{
-			return Conflict(new
-			{
-				message = "Employee code already exists."
-			});
+			return ToErrorResult(result.Error);
 		}
 
-		return StatusCode(StatusCodes.Status201Created, employee);
+		return CreatedAtAction(
+			nameof(GetById),
+			new { id = result.Employee!.Id },
+			result.Employee);
 	}
 
 	[HttpGet]
@@ -67,9 +67,22 @@ public sealed class EmployeesController(
 		Guid id,
 		UpdateEmployeeRequest request)
 	{
-		var employee = await employeeService.UpdateAsync(id, request);
+		var result = await employeeService.UpdateAsync(id, request);
 
-		if (employee is null)
+		if (!result.IsSuccess)
+		{
+			return ToErrorResult(result.Error, id);
+		}
+
+		return Ok(result.Employee);
+	}
+
+	[HttpDelete("{id:guid}")]
+	[ProducesResponseType(StatusCodes.Status204NoContent)]
+	[ProducesResponseType(StatusCodes.Status404NotFound)]
+	public async Task<IActionResult> Delete(Guid id)
+	{
+		if (!await employeeService.DeleteAsync(id))
 		{
 			return NotFound(new
 			{
@@ -77,6 +90,27 @@ public sealed class EmployeesController(
 			});
 		}
 
-		return Ok(employee);
+		return NoContent();
 	}
+
+	private ObjectResult ToErrorResult(EmployeeOperationError error, Guid? employeeId = null) =>
+		error switch
+		{
+			EmployeeOperationError.EmployeeNotFound => NotFound(new
+			{
+				message = $"Employee with ID '{employeeId}' was not found."
+			}),
+			EmployeeOperationError.UserNotFound => BadRequest(new
+			{
+				message = "The selected user does not exist."
+			}),
+			EmployeeOperationError.UserAlreadyAssigned => Conflict(new
+			{
+				message = "The selected user is already assigned to another employee."
+			}),
+			_ => StatusCode(StatusCodes.Status500InternalServerError, new
+			{
+				message = "An unexpected employee operation error occurred."
+			})
+		};
 }

@@ -11,12 +11,6 @@ public sealed class EmployeeRepository(
 	public async Task AddAsync(Employee employee) =>
 	await dbContext.Employees.AddAsync(employee);
 
-	public async Task<IReadOnlyList<Employee>> GetListAsync() =>
-	await dbContext.Employees
-		.AsNoTracking()
-		.OrderByDescending(employee => employee.CreatedAtUtc)
-		.ToListAsync();
-
 	public Task<Employee?> GetByIdAsync(Guid id) =>
 		dbContext.Employees
 			.AsNoTracking()
@@ -25,6 +19,15 @@ public sealed class EmployeeRepository(
 	public Task<Employee?> GetByIdForUpdateAsync(Guid id) =>
 		dbContext.Employees
 			.FirstOrDefaultAsync(employee => employee.Id == id);
+
+	public Task<bool> IsUserAssignedAsync(
+		Guid userId,
+		Guid? excludedEmployeeId = null) =>
+		dbContext.Employees.AnyAsync(employee =>
+			employee.UserId == userId &&
+			(!excludedEmployeeId.HasValue || employee.Id != excludedEmployeeId.Value));
+
+	public void Remove(Employee employee) => dbContext.Employees.Remove(employee);
 
 	public Task SaveChangesAsync() =>
 		dbContext.SaveChangesAsync();

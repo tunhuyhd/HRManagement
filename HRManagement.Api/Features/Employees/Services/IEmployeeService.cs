@@ -4,13 +4,13 @@ namespace HRManagement.Api.Features.Employees.Services;
 
 public interface IEmployeeService
 {
-	Task<EmployeeResponse?> CreateAsync(CreateEmployeeRequest request);
-
-	Task<IReadOnlyList<EmployeeResponse>> GetListAsync();
+	Task<EmployeeOperationResult> CreateAsync(CreateEmployeeRequest request);
 
 	Task<EmployeeResponse?> GetByIdAsync(Guid id);
 
-	Task<EmployeeResponse?> UpdateAsync(Guid id, UpdateEmployeeRequest request);
+	Task<EmployeeOperationResult> UpdateAsync(Guid id, UpdateEmployeeRequest request);
+
+	Task<bool> DeleteAsync(Guid id);
 
 	Task<PagedResponse<EmployeeResponse>> GetListAsync(EmployeeListQuery query);
 }

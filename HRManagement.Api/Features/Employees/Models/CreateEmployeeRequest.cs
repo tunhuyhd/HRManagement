@@ -7,8 +7,12 @@ public sealed record CreateEmployeeRequest(
 	[Required, MaxLength(100)] string FirstName,
 	[Required, MaxLength(100)] string LastName,
 	DateOnly DateOfBirth,
-	Gender Gender,
+	[EnumDataType(typeof(Gender))] Gender Gender,
 	[MaxLength(20)] string? PhoneNumber,
 	[MaxLength(500)] string? Address,
 	DateOnly HireDate,
-	Guid? UserId);
+	Guid? UserId) : IValidatableObject
+{
+	public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) =>
+		EmployeeRequestValidator.Validate(FirstName, LastName, DateOfBirth, HireDate);
+}

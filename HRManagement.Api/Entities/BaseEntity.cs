@@ -9,4 +9,10 @@ public abstract class BaseEntity
     public Guid? LastModifiedBy { get; set; }
 
     public DateTime? LastModifiedAtUtc { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public Guid? DeletedBy { get; set; }
+
+    public DateTime? DeletedAtUtc { get; set; }
 }

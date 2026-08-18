@@ -32,6 +32,8 @@ public sealed class ApplicationDbContext(
 
 		builder.ApplyConfigurationsFromAssembly(
 			typeof(ApplicationDbContext).Assembly);
+
+		builder.ApplySoftDeleteQueryFilters();
 	}
 
 	public override Task<int> SaveChangesAsync(
@@ -47,12 +49,20 @@ public sealed class ApplicationDbContext(
 
 		foreach (var entry in entries)
 		{
+			if (entry.State == EntityState.Deleted)
+			{
+				entry.State = EntityState.Modified;
+				entry.Entity.IsDeleted = true;
+				entry.Entity.DeletedBy = currentUser.Id;
+				entry.Entity.DeletedAtUtc = changedAtUtc;
+			}
+
 			if (entry.State == EntityState.Added)
 			{
 				entry.Entity.CreatedAtUtc = changedAtUtc;
 			}
 
-			if (entry.State == EntityState.Modified)
+			if (entry.State == EntityState.Modified && !entry.Entity.IsDeleted)
 			{
 				entry.Entity.LastModifiedBy = currentUser.Id;
 				entry.Entity.LastModifiedAtUtc = changedAtUtc;

@@ -7,11 +7,18 @@ using HRManagement.Api.Repositories.Interfaces;
 namespace HRManagement.Api.Features.Employees.Services;
 
 public sealed class EmployeeService(
-	IEmployeeRepository employeeRepository) : IEmployeeService
+	IEmployeeRepository employeeRepository,
+	IUserRepository userRepository) : IEmployeeService
 {
-	public async Task<EmployeeResponse?> CreateAsync(
+	public async Task<EmployeeOperationResult> CreateAsync(
 		CreateEmployeeRequest request)
 	{
+		var userError = await ValidateUserAssignmentAsync(request.UserId);
+		if (userError != EmployeeOperationError.None)
+		{
+			return EmployeeOperationResult.Failure(userError);
+		}
+
 		var employee = new Employee
 		{
 			FirstName = request.FirstName.Trim(),
@@ -27,16 +34,7 @@ public sealed class EmployeeService(
 		await employeeRepository.AddAsync(employee);
 		await employeeRepository.SaveChangesAsync();
 
-		return employee.ToResponse();
-	}
-
-	public async Task<IReadOnlyList<EmployeeResponse>> GetListAsync()
-	{
-		var employees = await employeeRepository.GetListAsync();
-
-		return employees
-			.Select(employee => employee.ToResponse())
-			.ToList();
+		return EmployeeOperationResult.Success(employee.ToResponse());
 	}
 
 	public async Task<EmployeeResponse?> GetByIdAsync(Guid id)
@@ -46,14 +44,20 @@ public sealed class EmployeeService(
 		return employee?.ToResponse();
 	}
 
-	public async Task<EmployeeResponse?> UpdateAsync(
+	public async Task<EmployeeOperationResult> UpdateAsync(
 		Guid id,
 		UpdateEmployeeRequest request)
 	{
 		var employee = await employeeRepository.GetByIdForUpdateAsync(id);
 		if (employee is null)
 		{
-			return null;
+			return EmployeeOperationResult.Failure(EmployeeOperationError.EmployeeNotFound);
+		}
+
+		var userError = await ValidateUserAssignmentAsync(request.UserId, id);
+		if (userError != EmployeeOperationError.None)
+		{
+			return EmployeeOperationResult.Failure(userError);
 		}
 
 		employee.FirstName = request.FirstName.Trim();
@@ -68,7 +72,21 @@ public sealed class EmployeeService(
 
 		await employeeRepository.SaveChangesAsync();
 
-		return employee.ToResponse();
+		return EmployeeOperationResult.Success(employee.ToResponse());
+	}
+
+	public async Task<bool> DeleteAsync(Guid id)
+	{
+		var employee = await employeeRepository.GetByIdForUpdateAsync(id);
+		if (employee is null)
+		{
+			return false;
+		}
+
+		employeeRepository.Remove(employee);
+		await employeeRepository.SaveChangesAsync();
+
+		return true;
 	}
 
 	public async Task<PagedResponse<EmployeeResponse>> GetListAsync(
@@ -93,5 +111,24 @@ public sealed class EmployeeService(
 			query.PageSize,
 			totalCount,
 			totalPages);
+	}
+
+	private async Task<EmployeeOperationError> ValidateUserAssignmentAsync(
+		Guid? userId,
+		Guid? excludedEmployeeId = null)
+	{
+		if (!userId.HasValue)
+		{
+			return EmployeeOperationError.None;
+		}
+
+		if (await userRepository.FindByIdAsync(userId.Value) is null)
+		{
+			return EmployeeOperationError.UserNotFound;
+		}
+
+		return await employeeRepository.IsUserAssignedAsync(userId.Value, excludedEmployeeId)
+			? EmployeeOperationError.UserAlreadyAssigned
+			: EmployeeOperationError.None;
 	}
 }
