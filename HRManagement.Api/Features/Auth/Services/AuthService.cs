@@ -15,7 +15,9 @@ public sealed class AuthService(
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         var user = await userRepository.FindByEmailAsync(request.Email.Trim());
-        if (user is null || !await userRepository.CheckPasswordAsync(user, request.Password))
+        if (user is null ||
+            !user.IsActive ||
+            !await userRepository.CheckPasswordAsync(user, request.Password))
         {
             return null;
         }
@@ -37,7 +39,7 @@ public sealed class AuthService(
         }
 
         var user = await userRepository.FindByIdAsync(storedToken.UserId);
-        if (user is null || user.LockoutEnd > DateTimeOffset.UtcNow)
+        if (user is null || !user.IsActive || user.LockoutEnd > DateTimeOffset.UtcNow)
         {
             return null;
         }

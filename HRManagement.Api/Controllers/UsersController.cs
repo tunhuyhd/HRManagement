@@ -35,4 +35,33 @@ public sealed class UsersController(IUserService userService) : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, result.User);
     }
+
+    [HttpPut("{id:guid}/access")]
+    [ProducesResponseType<UserAccessResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserAccessResponse>> UpdateAccess(
+        Guid id,
+        UpdateUserAccessRequest request)
+    {
+        var result = await userService.UpdateAccessAsync(id, request);
+
+        return result.Error switch
+        {
+            UpdateUserAccessError.None => Ok(result.User),
+            UpdateUserAccessError.UserNotFound => NotFound(new
+            {
+                message = $"User with ID '{id}' was not found."
+            }),
+            UpdateUserAccessError.AdminUserProtected => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = "ADMIN users cannot be changed by this endpoint." }),
+            _ => BadRequest(new
+            {
+                message = "The user could not be updated.",
+                errors = result.Errors ?? Array.Empty<string>()
+            })
+        };
+    }
 }

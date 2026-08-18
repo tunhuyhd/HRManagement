@@ -16,6 +16,11 @@ public sealed class UserRepository(UserManager<AppUser> userManager) : IUserRepo
     public Task<IdentityResult> AddToRoleAsync(AppUser user, string role) =>
         userManager.AddToRoleAsync(user, role);
 
+    public Task<IdentityResult> RemoveFromRolesAsync(AppUser user, IEnumerable<string> roles) =>
+        userManager.RemoveFromRolesAsync(user, roles);
+
+    public Task<IdentityResult> UpdateAsync(AppUser user) => userManager.UpdateAsync(user);
+
     public Task<IList<string>> GetRolesAsync(AppUser user) => userManager.GetRolesAsync(user);
 
     public Task<bool> CheckPasswordAsync(AppUser user, string password) =>

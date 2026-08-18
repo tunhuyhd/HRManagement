@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +86,39 @@ builder.Services
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
             ClockSkew = TimeSpan.Zero
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdValue, out var userId))
+                {
+                    context.Fail("The access token does not contain a valid user ID.");
+                    return;
+                }
+
+                var userManager = context.HttpContext.RequestServices
+                    .GetRequiredService<UserManager<AppUser>>();
+                var user = await userManager.FindByIdAsync(userId.ToString());
+
+                if (user is null || !user.IsActive)
+                {
+                    context.Fail("The user is inactive or no longer exists.");
+                    return;
+                }
+
+                var currentRoles = await userManager.GetRolesAsync(user);
+                var tokenRoles = context.Principal!
+                    .FindAll(ClaimTypes.Role)
+                    .Select(claim => claim.Value);
+
+                if (!currentRoles.ToHashSet(StringComparer.OrdinalIgnoreCase)
+                    .SetEquals(tokenRoles))
+                {
+                    context.Fail("The user's roles have changed. Refresh the access token.");
+                }
+            }
         };
     });
 builder.Services.AddAuthorization();
