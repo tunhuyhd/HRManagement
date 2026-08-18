@@ -74,6 +74,10 @@ Ready-to-run request examples are in `HRManagement.Api/HRManagement.Api.http`.
 | POST | `/api/auth/login` | Anonymous | Login and receive a JWT |
 | GET | `/api/auth/me` | Authenticated | Return the current user |
 | POST | `/api/users` | `ADMIN` | Create an account with the `USER` role |
+| POST | `/api/employees` | `ADMIN` | Create an employee |
+| GET | `/api/employees` | `ADMIN` | Get a paginated employee list |
+| GET | `/api/employees/{id}` | `ADMIN` | Get an employee by ID |
+| PUT | `/api/employees/{id}` | `ADMIN` | Update an employee |
 
 New users can log in immediately with the email and password assigned by an admin.
 
@@ -94,6 +98,22 @@ Jwt__Issuer=...
 Jwt__Audience=...
 Jwt__Key=at-least-32-characters-and-random
 ```
+
+## Database naming convention
+
+EF Core uses `UseSnakeCaseNamingConvention()`. Entity and property names are mapped
+automatically to PostgreSQL snake_case names:
+
+```text
+Employee       -> employees
+EmployeeCode   -> employee_code
+CreatedAtUtc   -> created_at_utc
+```
+
+New entities do not need `[Table]` or `[Column]` attributes just to apply this naming
+rule. Fluent configurations should be used for constraints, indexes, relationships,
+conversions, and generated values. Identity tables are explicitly mapped once in
+`ApplicationDbContext` because ASP.NET Core Identity supplies its own table names.
 
 ## EF Core migrations
 

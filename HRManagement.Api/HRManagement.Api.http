@@ -37,3 +37,20 @@ Content-Type: application/json
 ### Get current user
 GET {{host}}/api/auth/me
 Authorization: Bearer {{userToken}}
+
+### Update an employee (ADMIN only)
+PUT {{host}}/api/employees/replace-with-employee-id
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "firstName": "Huy",
+  "lastName": "Nguyen",
+  "dateOfBirth": "2001-08-18",
+  "gender": 1,
+  "phoneNumber": "0987654321",
+  "address": "HP - Updated",
+  "hireDate": "2026-08-18",
+  "status": 1,
+  "userId": null
+}

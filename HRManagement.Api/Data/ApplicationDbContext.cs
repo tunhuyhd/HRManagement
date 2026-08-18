@@ -13,6 +13,14 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 	{
 		base.OnModelCreating(builder);
 
+		builder.Entity<AppUser>().ToTable("asp_net_users");
+		builder.Entity<IdentityRole<Guid>>().ToTable("asp_net_roles");
+		builder.Entity<IdentityUserClaim<Guid>>().ToTable("asp_net_user_claims");
+		builder.Entity<IdentityUserRole<Guid>>().ToTable("asp_net_user_roles");
+		builder.Entity<IdentityUserLogin<Guid>>().ToTable("asp_net_user_logins");
+		builder.Entity<IdentityRoleClaim<Guid>>().ToTable("asp_net_role_claims");
+		builder.Entity<IdentityUserToken<Guid>>().ToTable("asp_net_user_tokens");
+
 		builder.HasSequence<long>("employee_code_sequence")
 		.StartsAt(1)
 		.IncrementsBy(1);

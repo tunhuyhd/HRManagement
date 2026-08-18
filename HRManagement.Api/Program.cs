@@ -42,7 +42,12 @@ builder.Services.AddSwaggerGen(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options
+        .UseNpgsql(
+            connectionString,
+            npgsql => npgsql.MigrationsHistoryTable("__ef_migrations_history"))
+        .UseSnakeCaseNamingConvention());
 builder.Services
     .AddIdentityCore<AppUser>(options =>
     {

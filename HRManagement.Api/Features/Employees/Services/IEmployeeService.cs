@@ -1,5 +1,5 @@
-﻿using HRManagement.Api.Features.Employees.Models;
-
+﻿using HRManagement.Api.Common.Pagination;
+using HRManagement.Api.Features.Employees.Models;
 namespace HRManagement.Api.Features.Employees.Services;
 
 public interface IEmployeeService
@@ -9,4 +9,8 @@ public interface IEmployeeService
 	Task<IReadOnlyList<EmployeeResponse>> GetListAsync();
 
 	Task<EmployeeResponse?> GetByIdAsync(Guid id);
+
+	Task<EmployeeResponse?> UpdateAsync(Guid id, UpdateEmployeeRequest request);
+
+	Task<PagedResponse<EmployeeResponse>> GetListAsync(EmployeeListQuery query);
 }

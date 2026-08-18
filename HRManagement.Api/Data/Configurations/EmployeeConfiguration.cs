@@ -9,8 +9,6 @@ public sealed class EmployeeConfiguration
 {
 	public void Configure(EntityTypeBuilder<Employee> builder)
 	{
-		builder.ToTable("Employees");
-
 		builder.HasKey(employee => employee.Id);
 
 		builder.Property(employee => employee.EmployeeCode)
