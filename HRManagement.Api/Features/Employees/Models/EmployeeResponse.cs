@@ -14,4 +14,6 @@ public sealed record EmployeeResponse(
 	DateOnly HireDate,
 	EmployeeStatus Status,
 	Guid? UserId,
-	DateTime CreatedAtUtc);
+	DateTime CreatedAtUtc,
+	Guid? LastModifiedBy,
+	DateTime? LastModifiedAtUtc);

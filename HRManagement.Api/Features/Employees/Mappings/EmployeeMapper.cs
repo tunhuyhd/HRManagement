@@ -18,5 +18,7 @@ public static class EmployeeMapper
 			employee.HireDate,
 			employee.Status,
 			employee.UserId,
-			employee.CreatedAtUtc);
+			employee.CreatedAtUtc,
+			employee.LastModifiedBy,
+			employee.LastModifiedAtUtc);
 }

@@ -6,5 +6,7 @@ public abstract class BaseEntity
 
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public DateTime? UpdatedAtUtc { get; set; }
+    public Guid? LastModifiedBy { get; set; }
+
+    public DateTime? LastModifiedAtUtc { get; set; }
 }

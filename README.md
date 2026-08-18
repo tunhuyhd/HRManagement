@@ -78,8 +78,28 @@ Ready-to-run request examples are in `HRManagement.Api/HRManagement.Api.http`.
 | GET | `/api/employees` | `ADMIN` | Get a paginated employee list |
 | GET | `/api/employees/{id}` | `ADMIN` | Get an employee by ID |
 | PUT | `/api/employees/{id}` | `ADMIN` | Update an employee |
+| GET | `/api/audit-logs` | `ADMIN` | Query paginated audit history |
 
 New users can log in immediately with the email and password assigned by an admin.
+
+## Auditing
+
+Entities derived from `BaseEntity` record the latest modification in
+`last_modified_by` and `last_modified_at_utc`. Every create, update, and delete is
+also recorded in `audit_logs` with the table name, record ID, action, changed
+columns, old/new JSON values, acting user, and UTC timestamp.
+
+Query all audit logs:
+
+```http
+GET /api/audit-logs?pageNumber=1&pageSize=20
+```
+
+Query the history of one employee:
+
+```http
+GET /api/audit-logs?tableName=employees&recordId={employeeId}
+```
 
 ## Configuration
 

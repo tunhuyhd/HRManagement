@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using HRManagement.Api.Common.Auditing;
+using HRManagement.Api.Common.Auth;
 using HRManagement.Api.Entities;
 
 namespace HRManagement.Api.Data;
 
-public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+public sealed class ApplicationDbContext(
+	DbContextOptions<ApplicationDbContext> options,
+	ICurrentUser currentUser)
     : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>(options) {
 	public DbSet<Employee> Employees => Set<Employee>();
+	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{
@@ -32,20 +37,30 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 	public override Task<int> SaveChangesAsync(
 	CancellationToken cancellationToken = default)
 	{
-		var entries = ChangeTracker.Entries<BaseEntity>();
+		ChangeTracker.DetectChanges();
+
+		var changedAtUtc = DateTime.UtcNow;
+		var entries = ChangeTracker.Entries<BaseEntity>()
+			.Where(entry => entry.State is
+				EntityState.Added or EntityState.Modified or EntityState.Deleted)
+			.ToArray();
 
 		foreach (var entry in entries)
 		{
 			if (entry.State == EntityState.Added)
 			{
-				entry.Entity.CreatedAtUtc = DateTime.UtcNow;
+				entry.Entity.CreatedAtUtc = changedAtUtc;
 			}
 
 			if (entry.State == EntityState.Modified)
 			{
-				entry.Entity.UpdatedAtUtc = DateTime.UtcNow;
+				entry.Entity.LastModifiedBy = currentUser.Id;
+				entry.Entity.LastModifiedAtUtc = changedAtUtc;
 			}
 		}
+
+		ChangeTracker.DetectChanges();
+		AuditLogs.AddRange(AuditLogFactory.Create(entries, currentUser, changedAtUtc));
 
 		return base.SaveChangesAsync(cancellationToken);
 	}

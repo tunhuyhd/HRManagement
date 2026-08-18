@@ -1,6 +1,7 @@
 @host = http://localhost:5000
 @adminToken = paste-admin-access-token-here
 @userToken = paste-user-access-token-here
+@employeeId = replace-with-employee-id
 
 ### Login with seeded admin
 POST {{host}}/api/auth/login
@@ -39,7 +40,7 @@ GET {{host}}/api/auth/me
 Authorization: Bearer {{userToken}}
 
 ### Update an employee (ADMIN only)
-PUT {{host}}/api/employees/replace-with-employee-id
+PUT {{host}}/api/employees/{{employeeId}}
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
@@ -54,3 +55,7 @@ Content-Type: application/json
   "status": 1,
   "userId": null
 }
+
+### Get audit history for an employee (ADMIN only)
+GET {{host}}/api/audit-logs?tableName=employees&recordId={{employeeId}}&pageNumber=1&pageSize=20
+Authorization: Bearer {{adminToken}}

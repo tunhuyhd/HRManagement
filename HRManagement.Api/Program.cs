@@ -3,6 +3,7 @@ using HRManagement.Api.Data;
 using HRManagement.Api.Data.Seeding;
 using HRManagement.Api.Entities;
 using HRManagement.Api.Features.Auth.Services;
+using HRManagement.Api.Features.AuditLogs.Services;
 using HRManagement.Api.Features.Employees.Services;
 using HRManagement.Api.Features.Users.Services;
 using HRManagement.Api.Repositories;
@@ -96,6 +97,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 var app = builder.Build();
 
 app.UseExceptionHandler();
