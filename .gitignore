@@ -26,3 +26,6 @@ coverage.*
 # Runtime logs
 *.log
 logs/
+
+# Local design documentation
+/FUTURE_ENTITIES.md

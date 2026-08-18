@@ -13,6 +13,7 @@ public sealed class ApplicationDbContext(
     : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>(options) {
 	public DbSet<Employee> Employees => Set<Employee>();
 	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+	public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{
