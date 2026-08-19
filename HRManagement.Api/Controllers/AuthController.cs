@@ -13,16 +13,22 @@ public sealed class AuthController(
     IAuthService authService,
     IPasswordResetService passwordResetService) : ControllerBase
 {
+    private const string RefreshTokenCookieName = "hrm_refresh_token";
+
     [AllowAnonymous]
     [HttpPost("login")]
-    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
+    public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
         var response = await authService.LoginAsync(request);
-        return response is null
-            ? Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Email or password is incorrect.")
-            : Ok(response);
+        if (response is null)
+        {
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Email or password is incorrect.");
+        }
+
+        SetRefreshTokenCookie(response.RefreshToken, response.RefreshTokenExpiresAtUtc);
+        return Ok(ToAuthResponse(response));
     }
 
     [Authorize]
@@ -59,22 +65,47 @@ public sealed class AuthController(
 
     [AllowAnonymous]
     [HttpPost("refresh")]
-    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<AuthResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<LoginResponse>> Refresh(RefreshTokenRequest request)
+    public async Task<ActionResult<AuthResponse>> Refresh()
     {
-        var response = await authService.RefreshAsync(request.RefreshToken);
-        return response is null
-            ? Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Refresh token is invalid or expired.")
-            : Ok(response);
+        if (!IsTrustedBrowserRequest())
+        {
+            return BadRequest();
+        }
+
+        if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        var response = await authService.RefreshAsync(refreshToken);
+        if (response is null)
+        {
+            DeleteRefreshTokenCookie();
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Refresh token is invalid or expired.");
+        }
+
+        SetRefreshTokenCookie(response.RefreshToken, response.RefreshTokenExpiresAtUtc);
+        return Ok(ToAuthResponse(response));
     }
 
     [AllowAnonymous]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout(RefreshTokenRequest request)
+    public async Task<IActionResult> Logout()
     {
-        await authService.LogoutAsync(request.RefreshToken);
+        if (!IsTrustedBrowserRequest())
+        {
+            return BadRequest();
+        }
+
+        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken))
+        {
+            await authService.LogoutAsync(refreshToken);
+        }
+
+        DeleteRefreshTokenCookie();
         return NoContent();
     }
 
@@ -84,7 +115,13 @@ public sealed class AuthController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LogoutAll()
     {
-        return await authService.LogoutAllAsync() ? NoContent() : Unauthorized();
+        if (!await authService.LogoutAllAsync())
+        {
+            return Unauthorized();
+        }
+
+        DeleteRefreshTokenCookie();
+        return NoContent();
     }
 
     [Authorize]
@@ -96,4 +133,34 @@ public sealed class AuthController(
         var response = await authService.GetCurrentUserAsync();
         return response is null ? Unauthorized() : Ok(response);
     }
+
+    private static AuthResponse ToAuthResponse(LoginResponse response) =>
+        new(response.AccessToken, response.ExpiresAtUtc, response.User);
+
+    private void SetRefreshTokenCookie(string refreshToken, DateTime expiresAtUtc) =>
+        Response.Cookies.Append(
+            RefreshTokenCookieName,
+            refreshToken,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = expiresAtUtc,
+                Path = "/api/auth"
+            });
+
+    private void DeleteRefreshTokenCookie() =>
+        Response.Cookies.Delete(
+            RefreshTokenCookieName,
+            new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Path = "/api/auth"
+            });
+
+    private bool IsTrustedBrowserRequest() =>
+        Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 }
