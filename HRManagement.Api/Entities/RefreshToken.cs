@@ -2,19 +2,43 @@ namespace HRManagement.Api.Entities;
 
 public sealed class RefreshToken
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; private set; } = Guid.NewGuid();
 
-    public Guid UserId { get; set; }
+    public Guid UserId { get; private set; }
 
-    public required string TokenHash { get; set; }
+    public string TokenHash { get; private set; } = null!;
 
-    public DateTime ExpiresAtUtc { get; set; }
+    public DateTime ExpiresAtUtc { get; private set; }
 
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
 
-    public DateTime? RevokedAtUtc { get; set; }
+    public DateTime? RevokedAtUtc { get; private set; }
 
-    public Guid? ReplacedByTokenId { get; set; }
+    public Guid? ReplacedByTokenId { get; private set; }
 
-    public AppUser User { get; set; } = null!;
+    public AppUser User { get; private set; } = null!;
+
+    private RefreshToken()
+    {
+    }
+
+    public RefreshToken(Guid userId, string tokenHash, DateTime expiresAtUtc)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
+
+        UserId = userId;
+        TokenHash = tokenHash;
+        ExpiresAtUtc = expiresAtUtc;
+    }
+
+    public void Revoke(DateTime revokedAtUtc)
+    {
+        RevokedAtUtc ??= revokedAtUtc;
+    }
+
+    public void ReplaceWith(Guid replacementTokenId, DateTime revokedAtUtc)
+    {
+        Revoke(revokedAtUtc);
+        ReplacedByTokenId = replacementTokenId;
+    }
 }

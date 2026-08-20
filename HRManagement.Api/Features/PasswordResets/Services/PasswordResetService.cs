@@ -52,10 +52,7 @@ public sealed class PasswordResetService(
             return;
         }
 
-        await passwordResetRequestRepository.AddAsync(new PasswordResetRequest
-        {
-            UserId = user.Id
-        });
+        await passwordResetRequestRepository.AddAsync(new PasswordResetRequest(user.Id));
         await passwordResetRequestRepository.SaveChangesAsync();
     }
 
@@ -119,9 +116,7 @@ public sealed class PasswordResetService(
         }
 
         var nowUtc = DateTime.UtcNow;
-        resetRequest.Status = PasswordResetStatus.Completed;
-        resetRequest.CompletedAtUtc = nowUtc;
-        resetRequest.CompletedBy = currentUser.Id;
+        resetRequest.Complete(currentUser.Id, nowUtc);
 
         await RevokeRefreshTokensAsync(user.Id, nowUtc);
         await passwordResetRequestRepository.SaveChangesAsync();
@@ -136,7 +131,7 @@ public sealed class PasswordResetService(
 
         foreach (var token in activeTokens)
         {
-            token.RevokedAtUtc = nowUtc;
+            token.Revoke(nowUtc);
         }
 
         await refreshTokenRepository.SaveChangesAsync();

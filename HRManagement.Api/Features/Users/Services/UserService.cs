@@ -122,7 +122,7 @@ public sealed class UserService(
             }
         }
 
-        user.IsActive = request.IsActive;
+        user.SetActive(request.IsActive);
         var updateResult = await userRepository.UpdateAsync(user);
         if (!updateResult.Succeeded)
         {
@@ -136,7 +136,7 @@ public sealed class UserService(
 
             foreach (var token in activeTokens)
             {
-                token.RevokedAtUtc = nowUtc;
+                token.Revoke(nowUtc);
             }
 
             await refreshTokenRepository.SaveChangesAsync();

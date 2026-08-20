@@ -48,19 +48,17 @@ public static class AuditLogFactory
                     property => property.CurrentValue)
                 : null;
 
-            auditLogs.Add(new AuditLog
-            {
-                TableName = entry.Metadata.GetTableName() ?? entry.Metadata.ClrType.Name,
-                RecordId = GetRecordId(entry),
-                Action = IsSoftDelete(entry) ? "Deleted" : entry.State.ToString(),
-                ChangedColumns = JsonSerializer.Serialize(
+            auditLogs.Add(new AuditLog(
+                entry.Metadata.GetTableName() ?? entry.Metadata.ClrType.Name,
+                GetRecordId(entry),
+                IsSoftDelete(entry) ? "Deleted" : entry.State.ToString(),
+                JsonSerializer.Serialize(
                     changedProperties.Select(property => property.Metadata.GetColumnName())),
-                OldValues = oldValues is null ? null : JsonSerializer.Serialize(oldValues),
-                NewValues = newValues is null ? null : JsonSerializer.Serialize(newValues),
-                ChangedBy = currentUser.Id,
-                ChangedByEmail = currentUser.Email,
-                ChangedAtUtc = changedAtUtc
-            });
+                oldValues is null ? null : JsonSerializer.Serialize(oldValues),
+                newValues is null ? null : JsonSerializer.Serialize(newValues),
+                currentUser.Id,
+                currentUser.Email,
+                changedAtUtc));
         }
 
         return auditLogs;

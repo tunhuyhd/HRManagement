@@ -19,17 +19,15 @@ public sealed class EmployeeService(
 			return EmployeeOperationResult.Failure(userError);
 		}
 
-		var employee = new Employee
-		{
-			FirstName = request.FirstName.Trim(),
-			LastName = request.LastName.Trim(),
-			DateOfBirth = request.DateOfBirth,
-			Gender = request.Gender,
-			PhoneNumber = request.PhoneNumber?.Trim(),
-			Address = request.Address?.Trim(),
-			HireDate = request.HireDate,
-			UserId = request.UserId
-		};
+		var employee = new Employee(
+			request.FirstName,
+			request.LastName,
+			request.DateOfBirth,
+			request.Gender,
+			request.PhoneNumber,
+			request.Address,
+			request.HireDate,
+			request.UserId);
 
 		await employeeRepository.AddAsync(employee);
 		await employeeRepository.SaveChangesAsync();
@@ -60,15 +58,16 @@ public sealed class EmployeeService(
 			return EmployeeOperationResult.Failure(userError);
 		}
 
-		employee.FirstName = request.FirstName.Trim();
-		employee.LastName = request.LastName.Trim();
-		employee.DateOfBirth = request.DateOfBirth;
-		employee.Gender = request.Gender;
-		employee.PhoneNumber = request.PhoneNumber?.Trim();
-		employee.Address = request.Address?.Trim();
-		employee.HireDate = request.HireDate;
-		employee.Status = request.Status;
-		employee.UserId = request.UserId;
+		employee.Update(
+			request.FirstName,
+			request.LastName,
+			request.DateOfBirth,
+			request.Gender,
+			request.PhoneNumber,
+			request.Address,
+			request.HireDate,
+			request.Status,
+			request.UserId);
 
 		await employeeRepository.SaveChangesAsync();
 

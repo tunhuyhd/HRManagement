@@ -57,7 +57,7 @@ public sealed class AuthService(
             return;
         }
 
-        storedToken.RevokedAtUtc = DateTime.UtcNow;
+        storedToken.Revoke(DateTime.UtcNow);
         await refreshTokenRepository.SaveChangesAsync();
     }
 
@@ -73,7 +73,7 @@ public sealed class AuthService(
 
         foreach (var token in activeTokens)
         {
-            token.RevokedAtUtc = nowUtc;
+            token.Revoke(nowUtc);
         }
 
         await refreshTokenRepository.SaveChangesAsync();
@@ -107,19 +107,18 @@ public sealed class AuthService(
         var (refreshToken, refreshTokenHash, refreshTokenExpiresAtUtc) =
             refreshTokenService.Create();
 
-        var newRefreshToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = refreshTokenHash,
-            ExpiresAtUtc = refreshTokenExpiresAtUtc
-        };
+        var newRefreshToken = new RefreshToken(
+            user.Id,
+            refreshTokenHash,
+            refreshTokenExpiresAtUtc);
 
         await refreshTokenRepository.AddAsync(newRefreshToken);
 
         if (tokenToReplace is not null)
         {
-            tokenToReplace.RevokedAtUtc = revokedAtUtc ?? DateTime.UtcNow;
-            tokenToReplace.ReplacedByTokenId = newRefreshToken.Id;
+            tokenToReplace.ReplaceWith(
+                newRefreshToken.Id,
+                revokedAtUtc ?? DateTime.UtcNow);
         }
 
         await refreshTokenRepository.SaveChangesAsync();
