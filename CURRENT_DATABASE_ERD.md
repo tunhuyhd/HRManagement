@@ -1,199 +1,169 @@
 # HRManagement - Current Database Schema for ERD
 
-## 1. Muc dich
+## 1. Purpose
 
-Tai lieu nay mo ta cac bang dang ton tai trong PostgreSQL cua du an HRManagement. Noi dung duoc lay theo EF Core model hien tai va co the dung lam dau vao cho ChatGPT hoac cong cu tao Entity Relationship Diagram (ERD).
+This document describes the PostgreSQL schema represented by the current EF Core model. It can be used as input for an Entity Relationship Diagram (ERD). It covers only implemented entities, not proposed future modules.
 
-Tai lieu chi mo ta schema hien tai, khong bao gom cac entity du kien phat trien trong tuong lai.
+## 2. Database Overview
 
-## 2. Tong quan database
-
-Database hien co cac nhom bang sau:
-
-| Nhom | Bang |
+| Area | Tables |
 |---|---|
-| Nhan su | `employees` |
-| Xac thuc | `asp_net_users`, `asp_net_roles`, `asp_net_user_roles` |
-| Identity mo rong | `asp_net_user_claims`, `asp_net_role_claims`, `asp_net_user_logins`, `asp_net_user_tokens` |
-| Quan ly phien | `refresh_tokens` |
-| Khoi phuc mat khau | `password_reset_requests` |
-| Audit | `audit_logs` |
+| Human resources | `employees` |
+| Authentication | `asp_net_users`, `asp_net_roles`, `asp_net_user_roles` |
+| Extended Identity | `asp_net_user_claims`, `asp_net_role_claims`, `asp_net_user_logins`, `asp_net_user_tokens` |
+| Session management | `refresh_tokens` |
+| Password recovery | `password_reset_requests` |
+| Auditing | `audit_logs` |
 | EF Core | `__ef_migrations_history` |
 
-Ngoai cac bang, database co sequence `employee_code_sequence` de sinh ma nhan vien theo dinh dang `EMP001`, `EMP002`, ...
+The `employee_code_sequence` sequence generates employee codes such as `EMP001` and `EMP002`.
 
-## 3. Bang employees
+## 3. employees
 
-Luu ho so nghiep vu cua nhan vien.
+Stores employee business profiles.
 
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+| Column | PostgreSQL type | Nullable | Key/constraint | Description |
 |---|---|---:|---|---|
-| `id` | uuid | No | PK | ID nhan vien |
-| `employee_code` | varchar(20) | No | UNIQUE | Ma nhan vien, tu sinh boi sequence |
-| `first_name` | varchar(100) | No | | Ten |
-| `last_name` | varchar(100) | No | | Ho |
-| `date_of_birth` | date | No | | Ngay sinh |
-| `gender` | varchar(20) | No | | Enum Gender duoc luu dang chuoi |
-| `phone_number` | varchar(20) | Yes | | So dien thoai |
-| `address` | varchar(500) | Yes | | Dia chi |
-| `hire_date` | date | No | | Ngay vao lam |
-| `status` | varchar(30) | No | | Enum EmployeeStatus duoc luu dang chuoi |
-| `user_id` | uuid | Yes | FK, filtered UNIQUE | Tai khoan dang nhap lien ket |
-| `created_at_utc` | timestamptz | No | | Thoi gian tao |
-| `last_modified_by` | uuid | Yes | Logical reference | ID user cap nhat gan nhat |
-| `last_modified_at_utc` | timestamptz | Yes | | Thoi gian cap nhat gan nhat |
-| `is_deleted` | boolean | No | Default false | Co soft delete hay khong |
-| `deleted_by` | uuid | Yes | Logical reference | ID user thuc hien soft delete |
-| `deleted_at_utc` | timestamptz | Yes | | Thoi gian soft delete |
+| `id` | uuid | No | PK | Employee ID |
+| `employee_code` | varchar(20) | No | UNIQUE | Sequence-generated employee code |
+| `first_name` | varchar(100) | No | | First name |
+| `last_name` | varchar(100) | No | | Last name |
+| `date_of_birth` | date | No | | Date of birth |
+| `gender` | varchar(20) | No | | String representation of `Gender` |
+| `phone_number` | varchar(20) | Yes | | Phone number |
+| `address` | varchar(500) | Yes | | Address |
+| `hire_date` | date | No | | Hire date |
+| `status` | varchar(30) | No | | String representation of `EmployeeStatus` |
+| `user_id` | uuid | Yes | FK, filtered UNIQUE | Linked login account |
+| `created_at_utc` | timestamptz | No | | Creation time |
+| `last_modified_by` | uuid | Yes | Logical reference | Last modifying user |
+| `last_modified_at_utc` | timestamptz | Yes | | Last modification time |
+| `is_deleted` | boolean | No | Default false | Soft-delete marker |
+| `deleted_by` | uuid | Yes | Logical reference | User who soft-deleted the record |
+| `deleted_at_utc` | timestamptz | Yes | | Soft-delete time |
 
-### Rang buoc va index
+Constraints and indexes:
 
 - Primary key: `pk_employees (id)`.
 - Unique index: `ix_employees_employee_code (employee_code)`.
-- Filtered unique index: `ix_employees_user_id (user_id)` voi dieu kien `user_id IS NOT NULL AND NOT is_deleted`.
+- Filtered unique index: `ix_employees_user_id (user_id)` where `user_id IS NOT NULL AND NOT is_deleted`.
 - Foreign key: `employees.user_id -> asp_net_users.id`.
-- Khi AppUser bi xoa, `employees.user_id` duoc gan `NULL` (`ON DELETE SET NULL`).
-- Global query filter cua EF Core tu dong an cac ban ghi co `is_deleted = true`.
+- Deleting an AppUser sets `employees.user_id` to `NULL`.
+- An EF Core global query filter hides rows where `is_deleted = true`.
 
-## 4. Bang asp_net_users
+## 4. asp_net_users
 
-Luu tai khoan dang nhap. Bang nay duoc tao boi ASP.NET Core Identity va map voi entity `AppUser`.
+Stores login accounts managed by ASP.NET Core Identity and mapped to `AppUser`.
 
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+| Column | PostgreSQL type | Nullable | Key/constraint | Description |
 |---|---|---:|---|---|
-| `id` | uuid | No | PK | ID tai khoan |
-| `user_name` | varchar(256) | Yes | | Ten dang nhap |
-| `normalized_user_name` | varchar(256) | Yes | UNIQUE | Ten dang nhap da chuan hoa |
-| `email` | varchar(256) | Yes | | Email |
-| `normalized_email` | varchar(256) | Yes | INDEX | Email da chuan hoa |
-| `email_confirmed` | boolean | No | | Email da xac nhan |
-| `password_hash` | text | Yes | | Mat khau da bam boi Identity |
-| `security_stamp` | text | Yes | | Gia tri bao mat cua user |
-| `concurrency_stamp` | text | Yes | Concurrency token | Kiem soat cap nhat dong thoi |
-| `phone_number` | text | Yes | | So dien thoai |
-| `phone_number_confirmed` | boolean | No | | So dien thoai da xac nhan |
-| `two_factor_enabled` | boolean | No | | Bat xac thuc hai lop |
-| `lockout_end` | timestamptz | Yes | | Thoi diem ket thuc khoa |
-| `lockout_enabled` | boolean | No | | Cho phep khoa tai khoan |
-| `access_failed_count` | integer | No | | So lan dang nhap that bai |
-| `created_at_utc` | timestamptz | No | | Thoi gian tao tai khoan |
-| `is_active` | boolean | No | Default true | Trang thai cho phep user su dung he thong |
+| `id` | uuid | No | PK | Account ID |
+| `user_name` | varchar(256) | Yes | | User name |
+| `normalized_user_name` | varchar(256) | Yes | UNIQUE | Normalized user name |
+| `email` | varchar(256) | Yes | | Email address |
+| `normalized_email` | varchar(256) | Yes | INDEX | Normalized email |
+| `email_confirmed` | boolean | No | | Email confirmation flag |
+| `password_hash` | text | Yes | | Identity password hash |
+| `security_stamp` | text | Yes | | User security stamp |
+| `concurrency_stamp` | text | Yes | Concurrency token | Optimistic concurrency value |
+| `phone_number` | text | Yes | | Phone number |
+| `phone_number_confirmed` | boolean | No | | Phone confirmation flag |
+| `two_factor_enabled` | boolean | No | | Two-factor authentication flag |
+| `lockout_end` | timestamptz | Yes | | Lockout expiration |
+| `lockout_enabled` | boolean | No | | Whether lockout is enabled |
+| `access_failed_count` | integer | No | | Failed login count |
+| `created_at_utc` | timestamptz | No | | Account creation time |
+| `is_active` | boolean | No | Default true | Whether the account may use the system |
 
-Quan he:
+Relationships:
 
-- `asp_net_users 1 --- 0..1 employees`.
-- `asp_net_users 1 --- N refresh_tokens`.
-- `asp_net_users 1 --- N password_reset_requests`.
-- `asp_net_users N --- N asp_net_roles` thong qua `asp_net_user_roles`.
-- `asp_net_users 1 --- N asp_net_user_claims`.
-- `asp_net_users 1 --- N asp_net_user_logins`.
-- `asp_net_users 1 --- N asp_net_user_tokens`.
+- `asp_net_users 1 --- 0..1 employees`
+- `asp_net_users 1 --- N refresh_tokens`
+- `asp_net_users 1 --- N password_reset_requests`
+- `asp_net_users N --- N asp_net_roles` through `asp_net_user_roles`
+- One user may have many claims, external logins, and Identity tokens.
 
-## 5. Bang asp_net_roles
+## 5. ASP.NET Core Identity Tables
 
-Luu vai tro phan quyen, vi du `ADMIN` va `USER`.
+### asp_net_roles
 
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
-|---|---|---:|---|---|
-| `id` | uuid | No | PK | ID role |
-| `name` | varchar(256) | Yes | | Ten role |
-| `normalized_name` | varchar(256) | Yes | UNIQUE | Ten role da chuan hoa |
-| `concurrency_stamp` | text | Yes | Concurrency token | Kiem soat cap nhat dong thoi |
+Stores authorization roles such as `ADMIN` and `USER`.
 
-Quan he:
+| Column | PostgreSQL type | Nullable | Key/constraint |
+|---|---|---:|---|
+| `id` | uuid | No | PK |
+| `name` | varchar(256) | Yes | |
+| `normalized_name` | varchar(256) | Yes | UNIQUE |
+| `concurrency_stamp` | text | Yes | Concurrency token |
 
-- `asp_net_roles N --- N asp_net_users` thong qua `asp_net_user_roles`.
-- `asp_net_roles 1 --- N asp_net_role_claims`.
+### asp_net_user_roles
 
-## 6. Bang asp_net_user_roles
+Join table for the many-to-many relationship between users and roles.
 
-Bang trung gian bieu dien quan he nhieu-nhieu giua user va role.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint |
+| Column | PostgreSQL type | Nullable | Key/constraint |
 |---|---|---:|---|
 | `user_id` | uuid | No | PK, FK -> `asp_net_users.id` |
 | `role_id` | uuid | No | PK, FK -> `asp_net_roles.id` |
 
-Rang buoc:
+The composite primary key is `(user_id, role_id)`. Both foreign keys use cascade delete.
 
-- Composite primary key: `(user_id, role_id)`.
-- Xoa user se cascade xoa cac dong user-role cua user.
-- Xoa role se cascade xoa cac dong user-role cua role.
+### asp_net_user_claims
 
-## 7. Bang asp_net_user_claims
-
-Luu cac claim rieng gan truc tiep cho user.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint |
+| Column | PostgreSQL type | Nullable | Key/constraint |
 |---|---|---:|---|
 | `id` | integer | No | PK, identity |
 | `user_id` | uuid | No | FK -> `asp_net_users.id` |
 | `claim_type` | text | Yes | |
 | `claim_value` | text | Yes | |
 
-Quan he: `asp_net_users 1 --- N asp_net_user_claims`, cascade delete.
+### asp_net_role_claims
 
-## 8. Bang asp_net_role_claims
-
-Luu cac claim gan cho role.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint |
+| Column | PostgreSQL type | Nullable | Key/constraint |
 |---|---|---:|---|
 | `id` | integer | No | PK, identity |
 | `role_id` | uuid | No | FK -> `asp_net_roles.id` |
 | `claim_type` | text | Yes | |
 | `claim_value` | text | Yes | |
 
-Quan he: `asp_net_roles 1 --- N asp_net_role_claims`, cascade delete.
+### asp_net_user_logins
 
-## 9. Bang asp_net_user_logins
+Stores external-provider login details, such as Google or Microsoft login data.
 
-Luu thong tin dang nhap tu nha cung cap ben ngoai nhu Google hoac Microsoft. Du an chua can su dung bang nay nhung ASP.NET Core Identity van tao san.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint |
+| Column | PostgreSQL type | Nullable | Key/constraint |
 |---|---|---:|---|
 | `login_provider` | text | No | Composite PK |
 | `provider_key` | text | No | Composite PK |
 | `provider_display_name` | text | Yes | |
 | `user_id` | uuid | No | FK -> `asp_net_users.id` |
 
-Quan he: `asp_net_users 1 --- N asp_net_user_logins`, cascade delete.
+### asp_net_user_tokens
 
-## 10. Bang asp_net_user_tokens
+Stores internal ASP.NET Core Identity tokens. This table is separate from the application's `refresh_tokens` table.
 
-Bang token noi bo cua ASP.NET Core Identity. Bang nay khac voi bang `refresh_tokens` do du an tu xay dung.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint |
+| Column | PostgreSQL type | Nullable | Key/constraint |
 |---|---|---:|---|
 | `user_id` | uuid | No | Composite PK, FK -> `asp_net_users.id` |
 | `login_provider` | text | No | Composite PK |
 | `name` | text | No | Composite PK |
 | `value` | text | Yes | |
 
-Quan he: `asp_net_users 1 --- N asp_net_user_tokens`, cascade delete.
+## 6. refresh_tokens
 
-## 11. Bang refresh_tokens
+Stores hashed refresh tokens for session management and token revocation.
 
-Luu hash cua refresh token de quan ly phien dang nhap va thu hoi token.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+| Column | PostgreSQL type | Nullable | Key/constraint | Description |
 |---|---|---:|---|---|
-| `id` | uuid | No | PK | ID refresh token |
-| `user_id` | uuid | No | FK | Chu so huu token |
-| `token_hash` | varchar(64) | No | UNIQUE | SHA-256 hash, khong luu token goc |
-| `expires_at_utc` | timestamptz | No | | Thoi gian het han |
-| `created_at_utc` | timestamptz | No | | Thoi gian tao |
-| `revoked_at_utc` | timestamptz | Yes | | Thoi gian thu hoi |
-| `replaced_by_token_id` | uuid | Yes | Self FK | Token moi thay the token nay |
+| `id` | uuid | No | PK | Refresh-token ID |
+| `user_id` | uuid | No | FK | Token owner |
+| `token_hash` | varchar(64) | No | UNIQUE | SHA-256 hash; the raw token is not stored |
+| `expires_at_utc` | timestamptz | No | | Expiration time |
+| `created_at_utc` | timestamptz | No | | Creation time |
+| `revoked_at_utc` | timestamptz | Yes | | Revocation time |
+| `replaced_by_token_id` | uuid | Yes | Self FK | Replacement token |
 
-Quan he:
+Deleting a user cascades to their refresh tokens. Deleting a referenced replacement token is restricted.
 
-- `asp_net_users 1 --- N refresh_tokens`.
-- `refresh_tokens 0..1 --- 0..N refresh_tokens` qua `replaced_by_token_id`.
-- Xoa user se cascade xoa tat ca refresh token cua user.
-- Xoa token dang duoc token khac tham chieu bi gioi han boi `ON DELETE RESTRICT`.
-
-Chuoi rotation vi du:
+Example rotation chain:
 
 ```text
 RefreshToken A (revoked) -> replaced by RefreshToken B
@@ -201,65 +171,59 @@ RefreshToken B (revoked) -> replaced by RefreshToken C
 RefreshToken C (active)
 ```
 
-## 12. Bang password_reset_requests
+## 7. password_reset_requests
 
-Luu yeu cau cap lai mat khau do user gui va trang thai xu ly cua ADMIN. Bang khong luu mat khau cu, mat khau moi hoac password-reset token.
+Stores user password-reset requests and administrator processing status. It never stores old passwords, new passwords, or raw reset tokens.
 
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+| Column | PostgreSQL type | Nullable | Key/constraint | Description |
 |---|---|---:|---|---|
-| `id` | uuid | No | PK | ID yeu cau |
-| `user_id` | uuid | No | FK | User yeu cau cap lai mat khau |
-| `status` | varchar(20) | No | Filtered UNIQUE part | Pending hoac Completed |
-| `completed_at_utc` | timestamptz | Yes | | Thoi gian ADMIN hoan tat |
-| `completed_by` | uuid | Yes | Logical reference | ID ADMIN xu ly |
-| `created_at_utc` | timestamptz | No | | Thoi gian gui yeu cau |
-| `last_modified_by` | uuid | Yes | Logical reference | ID user cap nhat |
-| `last_modified_at_utc` | timestamptz | Yes | | Thoi gian cap nhat |
-| `is_deleted` | boolean | No | | Soft delete |
-| `deleted_by` | uuid | Yes | Logical reference | ID user xoa |
-| `deleted_at_utc` | timestamptz | Yes | | Thoi gian xoa |
+| `id` | uuid | No | PK | Request ID |
+| `user_id` | uuid | No | FK | Requesting user |
+| `status` | varchar(20) | No | Filtered UNIQUE part | `Pending` or `Completed` |
+| `completed_at_utc` | timestamptz | Yes | | Completion time |
+| `completed_by` | uuid | Yes | Logical reference | Processing administrator |
+| `created_at_utc` | timestamptz | No | | Request time |
+| `last_modified_by` | uuid | Yes | Logical reference | Last modifying user |
+| `last_modified_at_utc` | timestamptz | Yes | | Last modification time |
+| `is_deleted` | boolean | No | | Soft-delete marker |
+| `deleted_by` | uuid | Yes | Logical reference | Deleting user |
+| `deleted_at_utc` | timestamptz | Yes | | Deletion time |
 
-Quan he va rang buoc:
+The user foreign key uses `ON DELETE RESTRICT`. A filtered unique index permits only one pending request per user. `completed_by` is a logical reference, not a physical foreign key.
 
-- `password_reset_requests.user_id -> asp_net_users.id`.
-- `asp_net_users 1 --- N password_reset_requests`.
-- `ON DELETE RESTRICT` de bao toan lich su yeu cau.
-- Filtered unique index chi cho phep mot yeu cau `Pending` cho moi user.
-- `completed_by` la logical reference, khong phai foreign key vat ly.
+## 8. audit_logs
 
-## 13. Bang audit_logs
+Stores change history for entities derived from `BaseEntity`.
 
-Luu lich su thay doi cua cac entity ke thua `BaseEntity`.
-
-| Cot | PostgreSQL type | Nullable | Key/constraint | Mo ta |
+| Column | PostgreSQL type | Nullable | Key/constraint | Description |
 |---|---|---:|---|---|
-| `id` | uuid | No | PK | ID audit log |
-| `table_name` | varchar(100) | No | INDEX part | Ten bang bi thay doi |
-| `record_id` | varchar(200) | No | INDEX part | ID ban ghi bi thay doi |
-| `action` | varchar(20) | No | | Added, Modified hoac Deleted |
-| `changed_columns` | jsonb | No | | Danh sach cot thay doi |
-| `old_values` | jsonb | Yes | | Gia tri truoc thay doi |
-| `new_values` | jsonb | Yes | | Gia tri sau thay doi |
-| `changed_by` | uuid | Yes | Logical reference | ID user thuc hien |
-| `changed_by_email` | varchar(256) | Yes | | Email user tai thoi diem thay doi |
-| `changed_at_utc` | timestamptz | No | INDEX | Thoi gian thay doi |
+| `id` | uuid | No | PK | Audit-log ID |
+| `table_name` | varchar(100) | No | INDEX part | Changed table |
+| `record_id` | varchar(200) | No | INDEX part | Changed record ID |
+| `action` | varchar(20) | No | | `Added`, `Modified`, or `Deleted` |
+| `changed_columns` | jsonb | No | | Changed columns |
+| `old_values` | jsonb | Yes | | Values before the change |
+| `new_values` | jsonb | Yes | | Values after the change |
+| `changed_by` | uuid | Yes | Logical reference | Acting user |
+| `changed_by_email` | varchar(256) | Yes | | User email at change time |
+| `changed_at_utc` | timestamptz | No | INDEX | Change time |
 
-`audit_logs` khong co foreign key vat ly den `asp_net_users` hoac bang nghiep vu. Day la chu y thiet ke de audit log van ton tai khi user hoac ban ghi goc da bi xoa. Khi tao ERD, co the ve duong net dut "logical reference" neu cong cu ho tro, nhung khong duoc danh dau la foreign key.
+Audit logs intentionally have no physical foreign keys to users or business tables. This preserves history after source records are deleted.
 
-## 14. Bang __ef_migrations_history
+## 9. __ef_migrations_history
 
-Bang ky thuat do EF Core quan ly, dung de ghi nhan migration da ap dung.
+EF Core uses this technical table to track applied migrations.
 
-| Cot | Mo ta |
+| Column | Description |
 |---|---|
-| `migration_id` | ID migration da chay |
-| `product_version` | Phien ban EF Core tao migration |
+| `migration_id` | Applied migration ID |
+| `product_version` | EF Core version that created the migration |
 
-Bang nay khong co quan he voi cac bang nghiep vu va co the bo khoi ERD nghiep vu.
+It has no business relationships and may be omitted from a business ERD.
 
-## 15. Tong hop foreign key
+## 10. Foreign-Key Summary
 
-| Bang con | Cot FK | Bang cha | Cot PK | Cardinality | Delete behavior |
+| Child table | FK column | Parent table | PK column | Cardinality | Delete behavior |
 |---|---|---|---|---|---|
 | `employees` | `user_id` | `asp_net_users` | `id` | User `1` - Employee `0..1` | SET NULL |
 | `refresh_tokens` | `user_id` | `asp_net_users` | `id` | User `1` - RefreshToken `N` | CASCADE |
@@ -272,7 +236,7 @@ Bang nay khong co quan he voi cac bang nghiep vu va co the bo khoi ERD nghiep vu
 | `asp_net_user_logins` | `user_id` | `asp_net_users` | `id` | User `1` - UserLogin `N` | CASCADE |
 | `asp_net_user_tokens` | `user_id` | `asp_net_users` | `id` | User `1` - UserToken `N` | CASCADE |
 
-## 16. Quan he ngan gon cho cong cu tao ERD
+## 11. Relationship Summary
 
 ```text
 asp_net_users 1 --- 0..1 employees
@@ -290,9 +254,7 @@ audit_logs --- no physical foreign keys
 __ef_migrations_history --- no relationships
 ```
 
-## 17. Mermaid ERD tham khao
-
-Khoi Mermaid nay the hien cac bang va quan he chinh. Co the dua nguyen noi dung tai lieu cho ChatGPT de bo sung day du cot vao diagram.
+## 12. Reference Mermaid ERD
 
 ```mermaid
 erDiagram
@@ -300,111 +262,20 @@ erDiagram
     ASP_NET_USERS ||--o{ REFRESH_TOKENS : "owns sessions"
     ASP_NET_USERS ||--o{ PASSWORD_RESET_REQUESTS : "requests reset"
     REFRESH_TOKENS o|--o{ REFRESH_TOKENS : "replaced by"
-
     ASP_NET_USERS ||--o{ ASP_NET_USER_ROLES : "assigned"
     ASP_NET_ROLES ||--o{ ASP_NET_USER_ROLES : "contains"
     ASP_NET_USERS ||--o{ ASP_NET_USER_CLAIMS : "has"
     ASP_NET_USERS ||--o{ ASP_NET_USER_LOGINS : "has"
     ASP_NET_USERS ||--o{ ASP_NET_USER_TOKENS : "has"
     ASP_NET_ROLES ||--o{ ASP_NET_ROLE_CLAIMS : "has"
-
-    ASP_NET_USERS {
-        uuid id PK
-        string email
-        string normalized_email
-        string password_hash
-        datetime created_at_utc
-        boolean is_active
-    }
-
-    EMPLOYEES {
-        uuid id PK
-        string employee_code UK
-        uuid user_id FK
-        string first_name
-        string last_name
-        date date_of_birth
-        string gender
-        date hire_date
-        string status
-        boolean is_deleted
-    }
-
-    REFRESH_TOKENS {
-        uuid id PK
-        uuid user_id FK
-        string token_hash UK
-        datetime expires_at_utc
-        datetime revoked_at_utc
-        uuid replaced_by_token_id FK
-    }
-
-    PASSWORD_RESET_REQUESTS {
-        uuid id PK
-        uuid user_id FK
-        string status
-        datetime created_at_utc
-        datetime completed_at_utc
-        uuid completed_by
-    }
-
-    ASP_NET_ROLES {
-        uuid id PK
-        string name
-        string normalized_name UK
-    }
-
-    ASP_NET_USER_ROLES {
-        uuid user_id PK,FK
-        uuid role_id PK,FK
-    }
-
-    ASP_NET_USER_CLAIMS {
-        int id PK
-        uuid user_id FK
-        string claim_type
-        string claim_value
-    }
-
-    ASP_NET_ROLE_CLAIMS {
-        int id PK
-        uuid role_id FK
-        string claim_type
-        string claim_value
-    }
-
-    ASP_NET_USER_LOGINS {
-        string login_provider PK
-        string provider_key PK
-        uuid user_id FK
-    }
-
-    ASP_NET_USER_TOKENS {
-        uuid user_id PK,FK
-        string login_provider PK
-        string name PK
-        string value
-    }
-
-    AUDIT_LOGS {
-        uuid id PK
-        string table_name
-        string record_id
-        string action
-        jsonb changed_columns
-        jsonb old_values
-        jsonb new_values
-        uuid changed_by
-        datetime changed_at_utc
-    }
 ```
 
-## 18. Prompt de xuat de tao diagram
+## 13. Suggested Diagram Prompt
 
 ```text
-Dua tren tai lieu CURRENT_DATABASE_ERD.md, hay tao ERD cho PostgreSQL bang Mermaid erDiagram.
-Chi su dung cac bang hien co trong tai lieu.
-Hien thi PK, FK, unique key, nullable foreign key va cardinality.
-Phan biet foreign key vat ly voi logical reference trong audit_logs.
-Khong tao quan he foreign key cho audit_logs va __ef_migrations_history.
+Using CURRENT_DATABASE_ERD.md, create a PostgreSQL ERD with Mermaid erDiagram.
+Use only tables documented in the file.
+Show primary keys, foreign keys, unique keys, nullable foreign keys, and cardinality.
+Distinguish physical foreign keys from logical references in audit_logs.
+Do not create foreign-key relationships for audit_logs or __ef_migrations_history.
 ```
