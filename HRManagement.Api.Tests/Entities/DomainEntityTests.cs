@@ -12,7 +12,7 @@ public sealed class EmployeeTests
         var employee = new Employee(
             "  An  ", "  Nguyen  ", new DateOnly(1995, 5, 10), Gender.Female,
             "  0901234567  ", "  Ho Chi Minh City  ",
-            new DateOnly(2024, 1, 15), userId);
+            new DateOnly(2024, 1, 15), userId, " annguyen123@gmail.com ");
 
         Assert.Equal("An", employee.FirstName);
         Assert.Equal("Nguyen", employee.LastName);
@@ -29,7 +29,7 @@ public sealed class EmployeeTests
 
         employee.Update(
             "Binh", "Tran", new DateOnly(1990, 2, 20), Gender.Male,
-            null, null, new DateOnly(2020, 3, 1), EmployeeStatus.OnLeave, null);
+            null, null, new DateOnly(2020, 3, 1), EmployeeStatus.OnLeave, null, string.Empty);
 
         Assert.Equal("Binh", employee.FirstName);
         Assert.Equal("Tran", employee.LastName);
@@ -44,12 +44,12 @@ public sealed class EmployeeTests
     {
         Assert.Throws<ArgumentException>(() => new Employee(
             firstName, "Nguyen", new DateOnly(1995, 5, 10), Gender.Female,
-            null, null, new DateOnly(2024, 1, 15), null));
+            null, null, new DateOnly(2024, 1, 15), null, " annguyen123@gmail.com "));
     }
 
     private static Employee CreateEmployee() => new(
         "An", "Nguyen", new DateOnly(1995, 5, 10), Gender.Female,
-        null, null, new DateOnly(2024, 1, 15), Guid.NewGuid());
+        null, null, new DateOnly(2024, 1, 15), Guid.NewGuid(), " annguyen123@gmail.com ");
 }
 
 public sealed class PasswordResetRequestTests

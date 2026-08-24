@@ -27,7 +27,8 @@ public sealed class EmployeeService(
 			request.PhoneNumber,
 			request.Address,
 			request.HireDate,
-			request.UserId);
+			request.UserId,
+			request.Email);
 
 		await employeeRepository.AddAsync(employee);
 		await employeeRepository.SaveChangesAsync();
@@ -63,11 +64,12 @@ public sealed class EmployeeService(
 			request.LastName,
 			request.DateOfBirth,
 			request.Gender,
-			request.PhoneNumber,
-			request.Address,
+			request.PhoneNumber ?? String.Empty,
+			request.Address ?? string.Empty,
 			request.HireDate,
 			request.Status,
-			request.UserId);
+			request.UserId,
+            request.Email ?? string.Empty);
 
 		await employeeRepository.SaveChangesAsync();
 
