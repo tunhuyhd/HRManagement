@@ -40,6 +40,7 @@ public sealed class Employee : BaseEntity
         string? phoneNumber,
         string? address,
         DateOnly hireDate,
+        string email,
         Guid? userId)
     {
         Update(
@@ -50,6 +51,7 @@ public sealed class Employee : BaseEntity
             phoneNumber,
             address,
             hireDate,
+            email ?? string.Empty,
             EmployeeStatus.Active,
             userId);
     }
@@ -62,6 +64,7 @@ public sealed class Employee : BaseEntity
         string? phoneNumber,
         string? address,
         DateOnly hireDate,
+        string email,
         EmployeeStatus status,
         Guid? userId)
     {
@@ -75,6 +78,7 @@ public sealed class Employee : BaseEntity
         PhoneNumber = phoneNumber?.Trim();
         Address = address?.Trim();
         HireDate = hireDate;
+        Email = email.Trim();
         Status = status;
         UserId = userId;
     }
