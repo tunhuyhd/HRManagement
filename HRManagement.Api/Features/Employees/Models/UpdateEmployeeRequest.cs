@@ -11,6 +11,7 @@ public sealed record UpdateEmployeeRequest(
     [MaxLength(20)] string? PhoneNumber,
     [MaxLength(500)] string? Address,
     DateOnly HireDate,
+    [MaxLength(500)] string Email,
     [EnumDataType(typeof(EmployeeStatus))] EmployeeStatus Status,
     Guid? UserId,
     [MaxLength(500)] string? Email) : IValidatableObject

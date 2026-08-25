@@ -68,8 +68,7 @@ public sealed class EmployeeService(
 			request.Address ?? string.Empty,
 			request.HireDate,
 			request.Status,
-			request.UserId,
-            request.Email ?? string.Empty);
+			request.UserId);
 
 		await employeeRepository.SaveChangesAsync();
 

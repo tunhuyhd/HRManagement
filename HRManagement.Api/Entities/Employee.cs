@@ -51,6 +51,7 @@ public sealed class Employee : BaseEntity
             phoneNumber ?? string.Empty,
             address ?? string.Empty,
             hireDate,
+            email ?? string.Empty,
             EmployeeStatus.Active,
             userId,
             email ?? string.Empty);
@@ -64,6 +65,7 @@ public sealed class Employee : BaseEntity
         string? phoneNumber,
         string? address,
         DateOnly hireDate,
+        string email,
         EmployeeStatus status,
         Guid? userId,
         string email)
@@ -78,6 +80,7 @@ public sealed class Employee : BaseEntity
         PhoneNumber = phoneNumber?.Trim();
         Address = address?.Trim();
         HireDate = hireDate;
+        Email = email.Trim();
         Status = status;
         UserId = userId;
         Email = email.Trim();
