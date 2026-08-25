@@ -20,6 +20,8 @@ public sealed class Employee : BaseEntity
 
     public DateOnly HireDate { get; private set; }
 
+    public string Email { get; private set; }
+
     public EmployeeStatus Status { get; private set; } = EmployeeStatus.Active;
 
     public Guid? UserId { get; private set; }
