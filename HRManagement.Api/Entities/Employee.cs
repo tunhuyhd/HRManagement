@@ -78,9 +78,8 @@ public sealed class Employee : BaseEntity
         PhoneNumber = phoneNumber?.Trim();
         Address = address?.Trim();
         HireDate = hireDate;
-        Email = email.Trim();
         Status = status;
         UserId = userId;
-        Email = email.Trim();
+        Email = email?.Trim();
     }
 }
