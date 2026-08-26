@@ -40,7 +40,7 @@ On startup, the API applies EF Core migrations and seeds:
 - Password: `admin123`
 
 - Role: `HR_MANAGER`
-- Email: `hello@gmail.com`
+- Email: `hello123@gmail.com`
 - Password: `password`
 
 ## Swagger
