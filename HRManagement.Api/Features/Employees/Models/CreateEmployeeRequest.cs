@@ -11,7 +11,8 @@ public sealed record CreateEmployeeRequest(
 	[MaxLength(20)] string? PhoneNumber,
 	[MaxLength(500)] string? Address,
 	DateOnly HireDate,
-	Guid? UserId) : IValidatableObject
+	Guid? UserId,
+    [MaxLength(500)] string? Email) : IValidatableObject
 {
 	public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) =>
 		EmployeeRequestValidator.Validate(FirstName, LastName, DateOfBirth, HireDate);

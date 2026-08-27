@@ -20,6 +20,8 @@ public sealed class Employee : BaseEntity
 
     public DateOnly HireDate { get; private set; }
 
+    public string? Email { get; private set; }
+
     public EmployeeStatus Status { get; private set; } = EmployeeStatus.Active;
 
     public Guid? UserId { get; private set; }
@@ -38,18 +40,20 @@ public sealed class Employee : BaseEntity
         string? phoneNumber,
         string? address,
         DateOnly hireDate,
-        Guid? userId)
+        Guid? userId,
+        string? email)
     {
         Update(
             firstName,
             lastName,
             dateOfBirth,
             gender,
-            phoneNumber,
-            address,
+            phoneNumber ?? string.Empty,
+            address ?? string.Empty,
             hireDate,
             EmployeeStatus.Active,
-            userId);
+            userId,
+            email ?? string.Empty);
     }
 
     public void Update(
@@ -61,7 +65,8 @@ public sealed class Employee : BaseEntity
         string? address,
         DateOnly hireDate,
         EmployeeStatus status,
-        Guid? userId)
+        Guid? userId,
+        string? email)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(firstName);
         ArgumentException.ThrowIfNullOrWhiteSpace(lastName);
@@ -75,5 +80,6 @@ public sealed class Employee : BaseEntity
         HireDate = hireDate;
         Status = status;
         UserId = userId;
+        Email = email?.Trim();
     }
 }

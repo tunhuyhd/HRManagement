@@ -1,0 +1,17 @@
+{
+  "firstName": "Mai",
+  "lastName": "Naim",
+  "dateOfBirth": "1997-08-24",
+  "gender": "Female",
+  "phoneNumber": "6769xxxxxx",
+  "address": "Maydnlous.St",
+  "hireDate": "2026-08-24",
+  "email": "ahh@gmail.com"
+}
+
+{
+  "email": "hello123@gmail.com",
+  "password": "passw0rd"
+}
+
+dotnet ef migrations add UpdateEmailDisplayForGetMethod --project .\HRManagement.Api\HRManagement.Api.csproj --startup-project .\HRManagement.Api\HRManagement.Api.csproj

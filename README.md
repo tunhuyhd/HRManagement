@@ -39,6 +39,10 @@ On startup, the API applies EF Core migrations and seeds:
 - Email: `admin@gmail.com`
 - Password: `admin123`
 
+- Role: `HR_MANAGER`
+- Email: `hello123@gmail.com`
+- Password: `password`
+
 ## Swagger
 
 Swagger is enabled when the application runs in the `Development` environment.
