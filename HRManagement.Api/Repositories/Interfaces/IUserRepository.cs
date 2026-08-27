@@ -7,6 +7,7 @@ public interface IUserRepository
 {
     Task<AppUser?> FindByEmailAsync(string email);
     Task<AppUser?> FindByIdAsync(Guid id);
+    Task<IdentityRole<Guid>?> FindRoleByIdAsync(Guid id);
     Task<(IReadOnlyList<AppUser> Items, int TotalCount)> GetListAsync(
         int pageNumber,
         int pageSize,

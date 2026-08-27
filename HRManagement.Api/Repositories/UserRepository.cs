@@ -5,11 +5,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HRManagement.Api.Repositories;
 
-public sealed class UserRepository(UserManager<AppUser> userManager) : IUserRepository
+public sealed class UserRepository(
+    UserManager<AppUser> userManager,
+    RoleManager<IdentityRole<Guid>> roleManager) : IUserRepository
 {
     public Task<AppUser?> FindByEmailAsync(string email) => userManager.FindByEmailAsync(email);
 
     public Task<AppUser?> FindByIdAsync(Guid id) => userManager.FindByIdAsync(id.ToString());
+
+    public Task<IdentityRole<Guid>?> FindRoleByIdAsync(Guid id) =>
+        roleManager.FindByIdAsync(id.ToString());
 
     public async Task<(IReadOnlyList<AppUser> Items, int TotalCount)> GetListAsync(
         int pageNumber,

@@ -74,6 +74,14 @@ public sealed class UsersController(IUserService userService) : ControllerBase
             {
                 message = $"User with ID '{id}' was not found."
             }),
+            UpdateUserAccessError.RoleNotFound => NotFound(new
+            {
+                message = $"Role with ID '{request.RoleId}' was not found."
+            }),
+            UpdateUserAccessError.RoleNotAssignable => BadRequest(new
+            {
+                message = "The selected role cannot be assigned by this endpoint."
+            }),
             UpdateUserAccessError.AdminUserProtected => StatusCode(
                 StatusCodes.Status403Forbidden,
                 new { message = "ADMIN users cannot be changed by this endpoint." }),

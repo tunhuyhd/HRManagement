@@ -4,6 +4,8 @@ public enum UpdateUserAccessError
 {
     None,
     UserNotFound,
+    RoleNotFound,
+    RoleNotAssignable,
     AdminUserProtected,
     IdentityError
 }

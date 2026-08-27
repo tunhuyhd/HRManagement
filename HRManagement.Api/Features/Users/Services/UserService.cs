@@ -93,7 +93,18 @@ public sealed class UserService(
             return new UpdateUserAccessResult(null, UpdateUserAccessError.AdminUserProtected);
         }
 
-        var targetRole = request.Role.Trim().ToUpperInvariant();
+        var role = await userRepository.FindRoleByIdAsync(request.RoleId);
+        if (role?.Name is null)
+        {
+            return new UpdateUserAccessResult(null, UpdateUserAccessError.RoleNotFound);
+        }
+
+        var targetRole = role.Name.ToUpperInvariant();
+        if (!AppRoles.AssignableByAdmin.Contains(targetRole, StringComparer.OrdinalIgnoreCase))
+        {
+            return new UpdateUserAccessResult(null, UpdateUserAccessError.RoleNotAssignable);
+        }
+
         var rolesToRemove = currentRoles
             .Where(role => AppRoles.AssignableByAdmin.Contains(role, StringComparer.OrdinalIgnoreCase))
             .Where(role => !role.Equals(targetRole, StringComparison.OrdinalIgnoreCase))
