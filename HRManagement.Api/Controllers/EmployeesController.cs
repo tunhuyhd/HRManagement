@@ -1,7 +1,7 @@
 ﻿using HRManagement.Api.Common.Pagination;
 using HRManagement.Api.Constants;
 using HRManagement.Api.Features.Employees.Models;
-using HRManagement.Api.Features.Employees.Services;
+using HRManagement.Api.Features.Employees.Services.Ipml;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

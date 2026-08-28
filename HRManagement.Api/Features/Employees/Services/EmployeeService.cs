@@ -2,6 +2,7 @@
 using HRManagement.Api.Entities;
 using HRManagement.Api.Features.Employees.Mappings;
 using HRManagement.Api.Features.Employees.Models;
+using HRManagement.Api.Features.Employees.Services.Ipml;
 using HRManagement.Api.Repositories.Interfaces;
 
 namespace HRManagement.Api.Features.Employees.Services;

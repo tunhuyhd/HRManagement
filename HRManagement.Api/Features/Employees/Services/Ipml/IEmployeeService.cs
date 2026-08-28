@@ -1,6 +1,6 @@
 ﻿using HRManagement.Api.Common.Pagination;
 using HRManagement.Api.Features.Employees.Models;
-namespace HRManagement.Api.Features.Employees.Services;
+namespace HRManagement.Api.Features.Employees.Services.Ipml;
 
 public interface IEmployeeService
 {
