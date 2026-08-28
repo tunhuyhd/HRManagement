@@ -12,6 +12,7 @@ public sealed class ApplicationDbContext(
 	ICurrentUser currentUser)
     : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>(options) {
 	public DbSet<Employee> Employees => Set<Employee>();
+	public DbSet<Department> Departments => Set<Department>();
 	public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 	public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 	public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();

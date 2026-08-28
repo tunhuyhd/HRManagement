@@ -3,6 +3,36 @@ using HRManagement.Api.Entities;
 
 namespace HRManagement.Api.Tests.Entities;
 
+public sealed class DepartmentTests
+{
+    [Fact]
+    public void Constructor_NormalizesValuesAndStartsActive()
+    {
+        var department = new Department("  hr  ", "  Human Resources  ", "  People operations  ");
+
+        Assert.Equal("HR", department.DepartmentCode);
+        Assert.Equal("Human Resources", department.Name);
+        Assert.Equal("People operations", department.Description);
+        Assert.True(department.IsActive);
+    }
+
+    [Fact]
+    public void SetParent_WhenDepartmentIsItsOwnParent_Throws()
+    {
+        var department = new Department("HR", "Human Resources");
+
+        Assert.Throws<InvalidOperationException>(() => department.SetParent(department.Id));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_RejectsBlankCode(string departmentCode)
+    {
+        Assert.Throws<ArgumentException>(() => new Department(departmentCode, "Human Resources"));
+    }
+}
+
 public sealed class EmployeeTests
 {
     [Fact]
